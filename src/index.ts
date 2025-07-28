@@ -1,4 +1,5 @@
 import * as PostalMime from 'postal-mime'
+import { htmlToText } from 'html-to-text'
 
 import { Env, Attachment } from './types'
 
@@ -15,7 +16,8 @@ export default {
     const subject = message.headers.get('subject') || 'no-subject'
     const rawEmail = new Response(message.raw)
     const email = await parser.parse(await rawEmail.arrayBuffer())
-    console.info('Parsed email:', email.html)
+    const emailText = htmlToText(email.html)
+    console.info('Parsed email:', emailText)
 
     // get attachment
     if (email.attachments === null || email.attachments.length === 0) {
@@ -25,7 +27,6 @@ export default {
     const TELEGRAM_TOKEN = env.TELEGRAM_TOKEN
     const TELEGRAM_CHANNEL_ID = '-4603865251'
     const apiUrl = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`
-    const decoder = new TextDecoder('utf-8')
 
     if (!TELEGRAM_TOKEN || TELEGRAM_TOKEN === '') {
       throw Error('Telegram token not defined')
@@ -45,10 +46,9 @@ export default {
       await env.R2_BUCKET.put(key, email.html)
       for (const attachment of email.attachments) {
         if (attachment.content) {
-          await env.R2_BUCKET.put(`${date.getUTCFullYear()}/attachment/${attachment.filename}`, attachment.content)
+          await env.R2_BUCKET.put(`mail/${date.getUTCFullYear()}/attachment/${attachment.filename}`, attachment.content)
         }
       }
-
       console.info(`Saved email to R2 bucket with key: ${key}`)
     }
 
@@ -64,16 +64,17 @@ export default {
           messages: [
             {
               role: 'system',
-              content: 'You summarize emails. Max three sentences response length. Only return the summarization',
+              content:
+                'You summarize emails. Mails may be in HTML, parse that. Max three sentences response length. Only return the summarization, human readable text',
             },
-            { role: 'user', content: `Summarize this email:\n\n${email.html}` },
+            { role: 'user', content: `Summarize this email:\n\n${emailText}` },
           ],
         }),
       })
 
       if (ai_res.ok) {
-        const ai_data = await ai_res.json()
-        msg += '\nSummary:\n\n' + ai_data.choices[0].message.content.trim()
+        const aiData = await ai_res.json()
+        msg += '\nSummary:\n\n' + aiData.choices[0].message.content.trim()
         console.info('AI summary created!')
       } else {
         console.error(`OpenAI API error: ${ai_res.statusText}`)
