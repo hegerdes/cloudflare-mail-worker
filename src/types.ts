@@ -1,6 +1,9 @@
 export interface Env {
   R2_BUCKET: R2Bucket
   TELEGRAM_TOKEN: string
+  SOCIAL_ADDRESS: string
+  DEV_ADDRESS: string
+  PVT_ADDRESS: string
   OPENAI_API_KEY: string
 }
 
