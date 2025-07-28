@@ -1,4 +1,5 @@
-name = 'hg-mail-worker'
+# wrangler.toml
+name = 'hegerdes-mail-worker'
 main = "src/index.ts"
 compatibility_date = "2023-03-16"
 
