@@ -1,4 +1,4 @@
-name = "cloudflare-email-worker"
+name = 'hg-mail-worker'
 main = "src/index.ts"
 compatibility_date = "2023-03-16"
 
