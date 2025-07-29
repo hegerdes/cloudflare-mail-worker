@@ -1,10 +1,10 @@
 import * as PostalMime from 'postal-mime'
 import { htmlToText } from 'html-to-text'
 
-import { Env, Attachment } from './types'
+import { Env } from './types'
 
 export default {
-  async email(message: EmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
+  async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
     const DEV_ADDRESS = env.DEV_ADDRESS
     const PVT_ADDRESS = env.PVT_ADDRESS
     const SOCIAL_ADDRESS = env.SOCIAL_ADDRESS
@@ -16,7 +16,10 @@ export default {
     const subject = message.headers.get('subject') || 'no-subject'
     const rawEmail = new Response(message.raw)
     const email = await parser.parse(await rawEmail.arrayBuffer())
-    const emailText = htmlToText(email.html)
+    let emailText = email.html
+    if (email.html) {
+      emailText = htmlToText(email.html)
+    }
     console.info('Parsed email:', emailText)
 
     // get attachment
@@ -34,7 +37,7 @@ export default {
 
     let msg = `📧 You've got mail from ${message.from} about ${subject}`
 
-    if (env.R2_BUCKET) {
+    if (env.R2_BUCKET && email.html) {
       // Save to R2: https://github.com/cloudflare/dmarc-email-worker/blob/main/src/index.ts
       const date = new Date()
       let sanitized_subject = subject
@@ -42,7 +45,7 @@ export default {
         .replace(/[^a-zA-Z0-9/_-]/g, '-') // Replace unsafe characters with hyphen
         .replace(/\/{2,}/g, '/') // Replace multiple slashes with a single slash
         .replace(/^-+|-+$/g, '')
-      let key = `mail/${date.getFullYear()}/-${message.from.replace('@', '.')}-${sanitized_subject}.mail`
+      let key = `mail/${date.getFullYear()}/-${message.from.replace('@', '.')}-${sanitized_subject}.html`
       await env.R2_BUCKET.put(key, email.html)
       for (const attachment of email.attachments) {
         if (attachment.content) {
@@ -73,7 +76,7 @@ export default {
       })
 
       if (ai_res.ok) {
-        const aiData = await ai_res.json()
+        const aiData = (await ai_res.json()) as any
         msg += '\nSummary:\n\n' + aiData.choices[0].message.content.trim()
         console.info('AI summary created!')
       } else {
@@ -93,5 +96,6 @@ export default {
       throw Error(JSON.stringify({ error: 'Failed to send message', details: data }))
     }
     await message.forward(SOCIAL_ADDRESS)
+    console.info('All done!')
   },
 }

@@ -3,6 +3,7 @@ name = 'hegerdes-mail-worker'
 main = "src/index.ts"
 compatibility_date = "2023-03-16"
 
+workers_dev = false
 
 [[r2_buckets]]
 binding = "R2_BUCKET"
