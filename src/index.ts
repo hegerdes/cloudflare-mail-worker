@@ -30,7 +30,7 @@ export default {
       emailText = htmlToText(email.html)
     }
     console.info('Parsed email:', emailText)
-    let msg = `📧 You've got mail from **${message.from}** about __${subject}__`
+    let msg = `📧 You've got mail from ${message.from} about ${subject}`
 
     if (env.R2_BUCKET && email.html) {
       // Save to R2: https://github.com/cloudflare/dmarc-email-worker/blob/main/src/index.ts
@@ -72,7 +72,7 @@ export default {
 
       if (ai_res.ok) {
         const aiData = (await ai_res.json()) as any
-        msg += '\n\n**Summary:**\n' + aiData.choices[0].message.content.trim()
+        msg += '\n\nSummary:\n' + aiData.choices[0].message.content.trim()
         console.info('AI summary created!')
       } else {
         console.error(`OpenAI API error: ${ai_res.statusText}`)
