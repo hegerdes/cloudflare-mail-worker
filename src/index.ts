@@ -5,9 +5,11 @@ import { Env } from './types'
 
 export default {
   async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
-    const DEV_ADDRESS = env.DEV_ADDRESS
-    const PVT_ADDRESS = env.PVT_ADDRESS
-    const SOCIAL_ADDRESS = env.SOCIAL_ADDRESS
+    // Check if MAIL_MAPPING is defined
+    console.info(env.MAIL_MAPPING)
+    if (!env.MAIL_MAPPING) {
+      throw Error('Mail mapping not defined')
+    }
 
     // Mail parser setup
     const parser = new PostalMime.default()
@@ -35,7 +37,7 @@ export default {
       throw Error('Telegram token not defined')
     }
 
-    let msg = `📧 You've got mail from ${message.from} about ${subject}`
+    let msg = `📧 You've got mail from **${message.from}** about __${subject}__`
 
     if (env.R2_BUCKET && email.html) {
       // Save to R2: https://github.com/cloudflare/dmarc-email-worker/blob/main/src/index.ts
@@ -77,7 +79,7 @@ export default {
 
       if (ai_res.ok) {
         const aiData = (await ai_res.json()) as any
-        msg += '\nSummary:\n\n' + aiData.choices[0].message.content.trim()
+        msg += '\n\n**Summary:**\n' + aiData.choices[0].message.content.trim()
         console.info('AI summary created!')
       } else {
         console.error(`OpenAI API error: ${ai_res.statusText}`)
@@ -95,7 +97,16 @@ export default {
       console.error('Telegram API error:', data)
       throw Error(JSON.stringify({ error: 'Failed to send message', details: data }))
     }
-    await message.forward(SOCIAL_ADDRESS)
+
+    let forwardMail = env.MAIL_MAPPING.default_forward_mail
+    for (const [key, value] of env.MAIL_MAPPING.mail_mapping) {
+      if (value.find((x) => x === message.from)) {
+        forwardMail = key
+        break
+      }
+    }
+    console.info(`Forwarding to: ${forwardMail}`)
+    await message.forward(forwardMail)
     console.info('All done!')
   },
 }

@@ -5,6 +5,7 @@ export interface Env {
   DEV_ADDRESS: string
   PVT_ADDRESS: string
   OPENAI_API_KEY: string
+  MAIL_MAPPING: MailMapping // Add this line
 }
 
 export type Attachment = {
@@ -14,4 +15,9 @@ export type Attachment = {
   related?: boolean
   contentId?: string
   content: string
+}
+
+export type MailMapping = {
+  default_forward_mail: string
+  mail_mapping: Map<string, Array<string>>
 }
