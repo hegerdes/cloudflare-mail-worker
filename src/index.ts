@@ -5,21 +5,24 @@ import { Env, MailMapping } from './types'
 
 export default {
   async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
-    console.info('Received email from :', message.from)
+    const subject = message.headers.get('subject') || 'no-subject'
+    console.info(`Received email from: ${message.from} about: ${subject}`)
 
     // Check if MAIL_MAPPING is defined
-    console.info(env.MAIL_MAPPING)
     if (!env.MAIL_MAPPING) {
       throw Error('Mail mapping not defined')
     }
-    const mailMapping = JSON.parse(env.MAIL_MAPPING) as MailMapping
-    console.info(mailMapping)
+    if (!env.TELEGRAM_TOKEN || env.TELEGRAM_TOKEN === '') {
+      throw Error('Telegram token not defined')
+    }
 
-    // Mail parser setup
+    // Constants
+    const TELEGRAM_CHANNEL_ID = '-4603865251'
+    const apiUrl = `https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage`
+
+    // Parse email content
     const parser = new PostalMime.default()
-
-    // parse email content
-    const subject = message.headers.get('subject') || 'no-subject'
+    const mailMapping = JSON.parse(env.MAIL_MAPPING) as MailMapping
     const rawEmail = new Response(message.raw)
     const email = await parser.parse(await rawEmail.arrayBuffer())
     let emailText = email.html
@@ -27,20 +30,6 @@ export default {
       emailText = htmlToText(email.html)
     }
     console.info('Parsed email:', emailText)
-
-    // get attachment
-    if (email.attachments === null || email.attachments.length === 0) {
-      throw new Error('no attachments')
-    }
-
-    const TELEGRAM_TOKEN = env.TELEGRAM_TOKEN
-    const TELEGRAM_CHANNEL_ID = '-4603865251'
-    const apiUrl = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`
-
-    if (!TELEGRAM_TOKEN || TELEGRAM_TOKEN === '') {
-      throw Error('Telegram token not defined')
-    }
-
     let msg = `📧 You've got mail from **${message.from}** about __${subject}__`
 
     if (env.R2_BUCKET && email.html) {
