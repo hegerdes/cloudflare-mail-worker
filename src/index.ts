@@ -19,6 +19,7 @@ export default {
     // Constants
     const TELEGRAM_CHANNEL_ID = '-4603865251'
     const apiUrl = `https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage`
+    let msg = `📧 You've got mail from ${message.from} about ${subject}`
 
     // Parse email content
     const parser = new PostalMime.default()
@@ -29,9 +30,8 @@ export default {
     if (email.html) {
       emailText = htmlToText(email.html)
     }
-    console.info('Parsed email:', emailText)
-    let msg = `📧 You've got mail from ${message.from} about ${subject}`
 
+    console.info('Parsed email:', emailText)
     if (env.R2_BUCKET && email.html) {
       // Save to R2: https://github.com/cloudflare/dmarc-email-worker/blob/main/src/index.ts
       const date = new Date()
@@ -58,12 +58,12 @@ export default {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4',
+          model: 'gpt-4.1-mini',
           messages: [
             {
               role: 'system',
               content:
-                'You summarize emails. Mails may be in HTML, parse that. Max three sentences response length. Only return the summarization, human readable text',
+                'You summarize emails. Mails may be in HTML, parse that. Max three sentences response length. Only return the summarization in human readable text',
             },
             { role: 'user', content: `Summarize this email:\n\n${emailText}` },
           ],
