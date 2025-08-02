@@ -5,12 +5,15 @@ import { Env, MailMapping } from './types'
 
 export default {
   async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
+    console.info('Received email from :', message.from)
+
     // Check if MAIL_MAPPING is defined
     console.info(env.MAIL_MAPPING)
     if (!env.MAIL_MAPPING) {
       throw Error('Mail mapping not defined')
     }
     const mailMapping = JSON.parse(env.MAIL_MAPPING) as MailMapping
+    console.info(mailMapping)
 
     // Mail parser setup
     const parser = new PostalMime.default()
