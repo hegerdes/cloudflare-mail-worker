@@ -93,6 +93,9 @@ export default {
 
     let forwardMail = mailMapping.default_forward_mail
     console.info(`Default forward mail: ${forwardMail}`)
+    console.info(`raw: ${env.MAIL_MAPPING}`)
+    console.info(`mapping: ${JSON.stringify(mailMapping.mail_mapping)}`)
+    console.info(`Message from: ${typeof mailMapping.mail_mapping}`)
     console.info('Checking mail mapping for forwarding...', mailMapping)
     for (const [key, value] of mailMapping.mail_mapping) {
       if (value.find((x) => x === message.from)) {
