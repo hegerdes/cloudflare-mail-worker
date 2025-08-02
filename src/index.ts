@@ -1,7 +1,7 @@
 import * as PostalMime from 'postal-mime'
 import { htmlToText } from 'html-to-text'
 
-import { Env } from './types'
+import { Env, MailMapping } from './types'
 
 export default {
   async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
@@ -10,6 +10,7 @@ export default {
     if (!env.MAIL_MAPPING) {
       throw Error('Mail mapping not defined')
     }
+    const mailMapping = JSON.parse(env.MAIL_MAPPING) as MailMapping
 
     // Mail parser setup
     const parser = new PostalMime.default()
@@ -98,8 +99,8 @@ export default {
       throw Error(JSON.stringify({ error: 'Failed to send message', details: data }))
     }
 
-    let forwardMail = env.MAIL_MAPPING.default_forward_mail
-    for (const [key, value] of env.MAIL_MAPPING.mail_mapping) {
+    let forwardMail = mailMapping.default_forward_mail
+    for (const [key, value] of mailMapping.mail_mapping) {
       if (value.find((x) => x === message.from)) {
         forwardMail = key
         break
