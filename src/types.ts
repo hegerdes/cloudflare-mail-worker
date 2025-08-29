@@ -2,7 +2,8 @@ export interface Env {
   R2_BUCKET: R2Bucket
   TELEGRAM_TOKEN: string
   OPENAI_API_KEY: string
-  MAIL_MAPPING: string // Add this line
+  MAIL_MAPPING: string
+  BLACKLIST: string
 }
 
 export type Attachment = {

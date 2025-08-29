@@ -6,7 +6,7 @@ compatibility_date = "2023-03-16"
 workers_dev = false
 
 [vars]
-BLACKLIST = ["tiscali.it"]
+BLACKLIST = "[\"tiscali.it\"]"
 
 [[r2_buckets]]
 binding = "R2_BUCKET"
