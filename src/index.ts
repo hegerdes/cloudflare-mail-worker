@@ -58,12 +58,12 @@ export default {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4.1-mini',
+          model: 'gpt-5-mini',
           messages: [
             {
               role: 'system',
               content:
-                'You summarize emails. Mails may be in HTML, parse that. Max three sentences response length. Only return the summarization in human readable text',
+                'You summarize emails and can detect spam. Mails may be in HTML, parse that. Max three sentences response length. Only return the summarization in human readable text. If it is an advertisment, spamor a scam answer with"This is probably spam - dropping it"',
             },
             { role: 'user', content: `Summarize this email:\n\n${emailText}` },
           ],
@@ -77,6 +77,11 @@ export default {
       } else {
         console.error(`OpenAI API error: ${ai_res.statusText}`)
       }
+    }
+
+    if (msg.includes('This is probably spam - dropping it')) {
+      console.info('Detected spam, not forwarding.')
+      return
     }
 
     const response = await fetch(apiUrl, {
