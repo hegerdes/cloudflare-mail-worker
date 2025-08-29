@@ -18,3 +18,4 @@ export type MailMapping = {
   default_forward_mail: string
   mail_mapping: Map<string, Array<string>>
 }
+export type Blacklist = Array<string>

@@ -1,16 +1,21 @@
 import * as PostalMime from 'postal-mime'
 import { htmlToText } from 'html-to-text'
 
-import { Env, MailMapping } from './types'
+import { Blacklist, Env, MailMapping } from './types'
 
 export default {
   async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
     const subject = message.headers.get('subject') || 'no-subject'
     console.info(`Received email from: ${message.from} about: ${subject}`)
 
+    const fromDomain = message.from.split('@')[1]
+
     // Check if MAIL_MAPPING is defined
     if (!env.MAIL_MAPPING) {
       throw Error('Mail mapping not defined')
+    }
+    if (!env.BLACKLIST) {
+      throw Error('Blacklist not defined')
     }
     if (!env.TELEGRAM_TOKEN || env.TELEGRAM_TOKEN === '') {
       throw Error('Telegram token not defined')
@@ -18,12 +23,18 @@ export default {
 
     // Constants
     const TELEGRAM_CHANNEL_ID = '-4603865251'
+    const blacklist = JSON.parse(env.BLACKLIST) as Blacklist
     const apiUrl = `https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage`
     let msg = `📧 You've got mail from ${message.from} about ${subject}`
 
+    if (blacklist.includes(fromDomain) || blacklist.includes(message.from)) {
+      console.info(`Sender ${message.from} is blacklisted, dropping email.`)
+      return
+    }
+
     // Parse email content
-    const parser = new PostalMime.default()
     const mailMapping = JSON.parse(env.MAIL_MAPPING) as MailMapping
+    const parser = new PostalMime.default()
     const rawEmail = new Response(message.raw)
     const email = await parser.parse(await rawEmail.arrayBuffer())
     let emailText = email.html
